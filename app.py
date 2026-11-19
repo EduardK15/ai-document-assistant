@@ -5,7 +5,7 @@ from pdf_service import extract_pdf
 from ai_service import answer_question
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 15 * 1024 * 1024
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -20,18 +20,18 @@ def index():
     try:
         pages = extract_pdf(file.stream)
         if not pages:
-            return render_template('index.html', error='Текст не найден. Для сканированных PDF понадобится OCR.'), 400
+            return render_template('index.html', error='Текст не найден. Для сканов нужен OCR.'), 400
         answer = answer_question(pages, question)
         return render_template('index.html', answer=answer, question=question, filename=file.filename)
     except ValueError as exc:
         return render_template('index.html', error=str(exc)), 400
     except Exception:
         app.logger.exception('Document processing failed')
-        return render_template('index.html', error='Ошибка обработки документа или обращения к AI. Проверьте настройки сервера.'), 500
+        return render_template('index.html', error='Ошибка обработки PDF или AI. Проверьте логи Render.'), 500
 
 @app.errorhandler(RequestEntityTooLarge)
 def too_large(_):
-    return render_template('index.html', error='Размер PDF не должен превышать 5 МБ.'), 413
+    return render_template('index.html', error='Максимальный размер загрузки — 15 МБ.'), 413
 
 if __name__ == '__main__':
     app.run(debug=False)
