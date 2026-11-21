@@ -30,6 +30,13 @@ main {text-align:start;max-width:1000px;box-sizing:border-box;}
 @keyframes spin {to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.spinner{animation:none}}
 @media(max-width:500px){.hero,.workspace{padding:16px}.features{grid-template-columns:1fr}}
+
+.answer {white-space:normal;}
+.answer p {white-space:pre-wrap;margin:0 0 .8em;}
+.answer h3,.answer h4,.answer h5 {margin:1em 0 .5em;line-height:1.4;}
+.answer ul,.answer ol {padding-inline-start:1.5em;margin:.5em 0 1em;}
+.answer li {margin:.35em 0;white-space:pre-wrap;}
+.answer hr {border:0;border-top:1px solid #cbd5e1;margin:1em 0;}
 </style>
 </head>
 <body>
@@ -63,7 +70,7 @@ main {text-align:start;max-width:1000px;box-sizing:border-box;}
 <div class="loading" id="loading" role="status" hidden><span class="spinner" aria-hidden="true"></span>{{ u.loading }}</div>
 </form>
 {% if error %}<section class="error" id="result" role="alert">{{ error }}</section>{% endif %}
-{% if answer %}<section id="answer-result"><h2>{{ t.answer }}</h2><p class="answer" dir="auto">{{ answer }}</p></section>{% endif %}
+{% if answer %}<section id="answer-result"><h2>{{ t.answer }}</h2><div class="answer" id="formatted-answer" dir="auto">{{ answer }}</div></section>{% endif %}
 </section>
 <h2>{{ u.tech }}</h2><div class="tech">{% for tech in ['Python','Flask','OpenAI API','RAG','Embeddings','Query Routing','Map-Reduce'] %}<span>{{ tech }}</span>{% endfor %}</div>
 <p class="note">{{ u.limitations }}</p><p class="note">{{ t.note }}</p>
@@ -76,6 +83,62 @@ const loading = document.getElementById('loading');
 document.querySelectorAll('.example').forEach(button => button.addEventListener('click', () => {question.value = button.textContent.trim();question.focus();}));
 form.addEventListener('submit', () => {submit.disabled = true;loading.hidden = false;form.setAttribute('aria-busy','true');});
 window.addEventListener('pageshow', () => {submit.disabled = false;loading.hidden = true;form.removeAttribute('aria-busy');});
+
+// Render a limited Markdown subset using text nodes, never HTML injection.
+const output = document.getElementById('formatted-answer');
+if (output) {
+  const raw = output.textContent;
+  const fragment = document.createDocumentFragment();
+  function inline(node, value) {
+    const pattern = /(\*\*[^*\n]+\*\*|`[^`\n]+`|\*[^*\n]+\*)/g;
+    let last = 0;
+    for (const match of value.matchAll(pattern)) {
+      node.append(document.createTextNode(value.slice(last, match.index)));
+      const token = match[0];
+      const bold = token.startsWith('**');
+      const el = document.createElement(bold ? 'strong' : token.startsWith('`') ? 'code' : 'em');
+      el.textContent = token.slice(bold ? 2 : 1, bold ? -2 : -1);
+      node.append(el);
+      last = match.index + token.length;
+    }
+    node.append(document.createTextNode(value.slice(last)));
+  }
+  let list = null, paragraph = null;
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed) { list = null; paragraph = null; continue; }
+    const heading = trimmed.match(/^(#{1,6})\s+(.+)$/);
+    const item = trimmed.match(/^([-*+]|\d+[.)])\s+(.+)$/);
+    if (heading || /^\*\*[^*]+\*\*$/.test(trimmed)) {
+      list = null; paragraph = null;
+      const el = document.createElement(heading ? 'h' + Math.min(5, heading[1].length + 2) : 'h3');
+      inline(el, heading ? heading[2] : trimmed); fragment.append(el);
+    } else if (/^(?:-{3,}|\*{3,}|_{3,})$/.test(trimmed)) {
+      list = null; paragraph = null; fragment.append(document.createElement('hr'));
+    } else if (item) {
+      paragraph = null;
+      const ordered = /^\d/.test(item[1]);
+      const tag = ordered ? 'OL' : 'UL';
+      if (!list || list.tagName !== tag) {
+        list = document.createElement(tag.toLowerCase());
+        if (ordered) list.start = parseInt(item[1], 10);
+        fragment.append(list);
+      }
+      const li = document.createElement('li');
+      if (ordered) li.value = parseInt(item[1], 10);
+      inline(li, item[2]); list.append(li);
+    } else if (list && /^\s{2,}/.test(line)) {
+      const li = list.lastElementChild; li.append(document.createTextNode('\n')); inline(li, trimmed);
+    } else {
+      list = null;
+      if (!paragraph) { paragraph = document.createElement('p'); fragment.append(paragraph); }
+      else paragraph.append(document.createTextNode('\n'));
+      inline(paragraph, line);
+    }
+  }
+  output.replaceChildren(fragment);
+}
+
 const result = document.getElementById('result') || document.getElementById('answer-result');
 if (result) result.scrollIntoView({block:'start'});
 </script>
