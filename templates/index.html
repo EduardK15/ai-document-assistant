@@ -6,29 +6,78 @@
 <title>AI Document Assistant</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 <style>
-.languages {display:flex; flex-wrap:wrap; gap:8px; margin:16px 0;}
-.languages a {padding:9px 14px; border:1px solid #64748b; border-radius:8px; color:#174ea6; text-decoration:none;}
+main {text-align:start;max-width:1000px;box-sizing:border-box;}
+.languages {display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;}
+.languages a {padding:9px 14px;border:1px solid #64748b;border-radius:8px;color:#174ea6;text-decoration:none;}
 .languages a[aria-current="true"] {background:#174ea6;color:white;}
-main {text-align:start;}
-.answer {white-space:pre-wrap;overflow-wrap:anywhere;}
+.hero {background:#153960;color:white;padding:26px;border-radius:16px;margin:20px 0;}
+.hero h2 {color:white;margin-top:0;}
+.hero p {color:white;line-height:1.6;}
+.features {display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:16px 0 24px;}
+.feature {border:1px solid #cbd5e1;border-radius:12px;padding:16px;line-height:1.5;}
+.feature h3 {margin:0 0 8px;font-size:1.05rem;}
+.feature p {margin:0;}
+.steps {line-height:1.8;padding-inline-start:24px;}
+.workspace {border:1px solid #cbd5e1;border-radius:14px;padding:20px;margin:22px 0;}
+.examples {display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+.examples button {background:#eef3fa;color:#174ea6;border:1px solid #b9cbe3;text-align:start;border-radius:8px;padding:10px;cursor:pointer;font-size:1rem;}
+.tech {display:flex;flex-wrap:wrap;gap:8px;direction:ltr;}
+.tech span {background:#eef2f7;color:#153960;padding:7px 10px;border-radius:8px;}
+.answer {white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;}
+.loading {margin:15px 0;line-height:1.5;}
+.loading[hidden] {display:none;}
+.spinner {display:inline-block;width:20px;height:20px;border:3px solid #cbd5e1;border-top-color:#174ea6;border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-inline-end:8px;}
+@keyframes spin {to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spinner{animation:none}}
+@media(max-width:500px){.hero,.workspace{padding:16px}.features{grid-template-columns:1fr}}
 </style>
 </head>
-<body><main>
+<body>
+{% set ui = {
+'ru': {'headline':'Ваш ИИ-помощник по документам','description':'Загружайте PDF, задавайте вопросы и получайте ответы на основе содержимого документа. Изучайте инструкции, договоры, отчёты и другие текстовые PDF без ручного поиска по страницам.','features':'Возможности сервиса','cards':[['Большие документы','До 300 страниц и 15 МБ.'],['Умный поиск','Поиск конкретных фактов и характеристик.'],['Анализ содержания','Обзоры, резюме и основные разделы.'],['Три языка','Русский, английский и иврит.'],['Ссылки на страницы','Номера страниц для проверки ответов.'],['Проверка ответов','Снижение риска неподтверждённых утверждений.']],'how':'Как пользоваться','steps':['Загрузите текстовый PDF.','Выберите язык ответа в верхней части страницы.','Введите вопрос и нажмите кнопку анализа.'],'workspace':'Анализ документа','examples':'Примеры вопросов','questions':['О чём этот документ? Перечисли основные разделы.','Какие ключевые условия и сроки указаны в документе?','Какие технические характеристики указаны? Приведи номера страниц.'],'loading':'Анализируем документ. Это может занять некоторое время.','tech':'Технологии проекта','limitations':'Ответы AI могут содержать ошибки. Проверяйте важные сведения по оригиналу документа.'},
+'en': {'headline':'Your AI document assistant','description':'Upload a PDF, ask questions and get answers based on its contents. Explore manuals, contracts, reports and other text-based PDFs without manually searching every page.','features':'What the service does','cards':[['Large documents','Up to 300 pages and 15 MB.'],['Smart search','Find specific facts and specifications.'],['Document analysis','Overviews, summaries and main sections.'],['Three languages','English, Hebrew and Russian.'],['Page references','Page numbers to help verify answers.'],['Answer verification','Reduces the risk of unsupported claims.']],'how':'How to use','steps':['Upload a text-based PDF.','Choose your answer language at the top of the page.','Enter a question and submit it.'],'workspace':'Analyze a document','examples':'Example questions','questions':['What is this document about? List its main sections.','What are the key conditions and deadlines in the document?','What technical specifications are listed? Include page numbers.'],'loading':'Analyzing your document. This may take a while.','tech':'Project technologies','limitations':'AI answers may contain errors. Check important information against the original document.'},
+'he': {'headline':'עוזר הבינה המלאכותית שלכם למסמכים','description':'העלו קובץ PDF, שאלו שאלות וקבלו תשובות המבוססות על תוכן המסמך. עיינו בהוראות, בחוזים, בדוחות ובמסמכי PDF מבוססי טקסט בלי לחפש ידנית בכל עמוד.','features':'יכולות השירות','cards':[['מסמכים גדולים','עד 300 עמודים ו-15 מגה-בייט.'],['חיפוש חכם','איתור עובדות ומפרטים במסמך.'],['ניתוח תוכן','סקירות, סיכומים ופרקים עיקריים.'],['שלוש שפות','עברית, אנגלית ורוסית.'],['הפניות לעמודים','מספרי עמודים לצורך אימות התשובות.'],['בדיקת תשובות','הפחתת הסיכון לטענות שאינן מבוססות.']],'how':'איך משתמשים','steps':['העלו קובץ PDF מבוסס טקסט.','בחרו את שפת התשובה בראש העמוד.','הקלידו שאלה ושלחו אותה לניתוח.'],'workspace':'ניתוח מסמך','examples':'שאלות לדוגמה','questions':['על מה המסמך? פרט את הפרקים העיקריים.','מהם התנאים והמועדים המרכזיים במסמך?','אילו מפרטים טכניים מופיעים במסמך? ציין מספרי עמודים.'],'loading':'המסמך נמצא בניתוח. הפעולה עשויה להימשך זמן מה.','tech':'טכנולוגיות הפרויקט','limitations':'תשובות הבינה המלאכותית עלולות לכלול שגיאות. יש לבדוק מידע חשוב מול המסמך המקורי.'}
+} %}
+{% set u = ui.get(lang, ui['en']) %}
+<main>
 <h1 dir="ltr">AI Document Assistant</h1>
 <nav class="languages" aria-label="{{ t.language }}" dir="ltr">
 {% for code, name in [('en','English'),('he','עברית'),('ru','Русский')] %}
 <a href="{{ url_for('index', lang=code) }}" lang="{{ code }}" aria-current="{{ 'true' if lang == code else 'false' }}">{{ name }}</a>
 {% endfor %}
 </nav>
-<p>{{ t.intro }}</p>
-<form method="post" action="{{ url_for('index', lang=lang) }}" enctype="multipart/form-data">
+<header class="hero"><h2>{{ u.headline }}</h2><p>{{ u.description }}</p></header>
+<h2>{{ u.features }}</h2>
+<div class="features">{% for card in u.cards %}<article class="feature"><h3>{{ card[0] }}</h3><p>{{ card[1] }}</p></article>{% endfor %}</div>
+<h2>{{ u.how }}</h2><ol class="steps">{% for step in u.steps %}<li>{{ step }}</li>{% endfor %}</ol>
+<section class="workspace" id="workspace">
+<h2>{{ u.workspace }}</h2><p>{{ t.intro }}</p>
+<form id="analysis-form" method="post" action="{{ url_for('index', lang=lang) }}" enctype="multipart/form-data">
 <label for="pdf">{{ t.pdf }}</label>
 <input id="pdf" name="pdf" type="file" accept=".pdf,application/pdf" required>
 <label for="question">{{ t.question }}</label>
 <textarea id="question" name="question" maxlength="1000" required dir="auto" placeholder="{{ t.placeholder }}">{{ question or '' }}</textarea>
-<button type="submit">{{ t.ask }}</button>
+<p><strong>{{ u.examples }}</strong></p>
+<div class="examples">{% for q in u.questions %}<button type="button" class="example">{{ q }}</button>{% endfor %}</div>
+<button id="submit-button" type="submit">{{ t.ask }}</button>
+<div class="loading" id="loading" role="status" hidden><span class="spinner" aria-hidden="true"></span>{{ u.loading }}</div>
 </form>
-{% if error %}<section class="error" role="alert">{{ error }}</section>{% endif %}
-{% if answer %}<section><h2>{{ t.answer }}</h2><p class="answer" dir="auto">{{ answer }}</p></section>{% endif %}
-<p class="note">{{ t.note }}</p>
-</main></body></html>
+{% if error %}<section class="error" id="result" role="alert">{{ error }}</section>{% endif %}
+{% if answer %}<section id="answer-result"><h2>{{ t.answer }}</h2><p class="answer" dir="auto">{{ answer }}</p></section>{% endif %}
+</section>
+<h2>{{ u.tech }}</h2><div class="tech">{% for tech in ['Python','Flask','OpenAI API','RAG','Embeddings','Query Routing','Map-Reduce'] %}<span>{{ tech }}</span>{% endfor %}</div>
+<p class="note">{{ u.limitations }}</p><p class="note">{{ t.note }}</p>
+</main>
+<script>
+const form = document.getElementById('analysis-form');
+const question = document.getElementById('question');
+const submit = document.getElementById('submit-button');
+const loading = document.getElementById('loading');
+document.querySelectorAll('.example').forEach(button => button.addEventListener('click', () => {question.value = button.textContent.trim();question.focus();}));
+form.addEventListener('submit', () => {submit.disabled = true;loading.hidden = false;form.setAttribute('aria-busy','true');});
+window.addEventListener('pageshow', () => {submit.disabled = false;loading.hidden = true;form.removeAttribute('aria-busy');});
+const result = document.getElementById('result') || document.getElementById('answer-result');
+if (result) result.scrollIntoView({block:'start'});
+</script>
+</body>
+</html>
