@@ -1,3 +1,34 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>AI Document Assistant</title><link rel="stylesheet" href="/static/style.css"></head>
-<body><main><h1>AI Document Assistant</h1><p>Загрузите PDF и задайте вопрос по его содержимому.</p><form method="post" enctype="multipart/form-data"><label for="pdf">PDF (до 15 МБ, 300 страниц)</label><input id="pdf" name="pdf" type="file" accept=".pdf,application/pdf" required><label for="question">Ваш вопрос</label><textarea id="question" name="question" maxlength="1000" required placeholder="О чём этот документ?">{{ question or '' }}</textarea><button type="submit">Спросить AI</button></form>{% if error %}<section class="error" role="alert">{{ error }}</section>{% endif %}{% if answer %}<section><h2>Ответ AI</h2><p class="answer">{{ answer }}</p></section>{% endif %}<p class="note">Демонстрационный проект. Не загружайте конфиденциальные документы. PDF отправляется в OpenAI API для обработки. Сканированные PDF пока не поддерживаются.</p></main></body></html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'he' else 'ltr' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Document Assistant</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+.languages {display:flex; flex-wrap:wrap; gap:8px; margin:16px 0;}
+.languages a {padding:9px 14px; border:1px solid #64748b; border-radius:8px; color:#174ea6; text-decoration:none;}
+.languages a[aria-current="true"] {background:#174ea6;color:white;}
+main {text-align:start;}
+.answer {white-space:pre-wrap;overflow-wrap:anywhere;}
+</style>
+</head>
+<body><main>
+<h1 dir="ltr">AI Document Assistant</h1>
+<nav class="languages" aria-label="{{ t.language }}" dir="ltr">
+{% for code, name in [('en','English'),('he','עברית'),('ru','Русский')] %}
+<a href="{{ url_for('index', lang=code) }}" lang="{{ code }}" aria-current="{{ 'true' if lang == code else 'false' }}">{{ name }}</a>
+{% endfor %}
+</nav>
+<p>{{ t.intro }}</p>
+<form method="post" action="{{ url_for('index', lang=lang) }}" enctype="multipart/form-data">
+<label for="pdf">{{ t.pdf }}</label>
+<input id="pdf" name="pdf" type="file" accept=".pdf,application/pdf" required>
+<label for="question">{{ t.question }}</label>
+<textarea id="question" name="question" maxlength="1000" required dir="auto" placeholder="{{ t.placeholder }}">{{ question or '' }}</textarea>
+<button type="submit">{{ t.ask }}</button>
+</form>
+{% if error %}<section class="error" role="alert">{{ error }}</section>{% endif %}
+{% if answer %}<section><h2>{{ t.answer }}</h2><p class="answer" dir="auto">{{ answer }}</p></section>{% endif %}
+<p class="note">{{ t.note }}</p>
+</main></body></html>
